@@ -1,26 +1,70 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable no-unused-vars */
-import { Types } from 'mongoose';
+import bcrypt from 'bcrypt';
+import httpStatus from 'http-status';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
 import { StatusCodes } from 'http-status-codes';
 import config from '../../config';
 import AppError from '../../errors/AppError';
-
-import { Response } from 'express';
-import jwt, { JwtPayload } from 'jsonwebtoken';
 import { IUser } from '../users/user.interface';
 import User from '../users/user.model';
+import { createToken } from './auth.utils';
 
-type UserPayload = {
-  _id: Types.ObjectId;
+const getConfigValue = (
+  key: keyof typeof config,
+  defaultValue: string,
+): string => {
+  const value = config[key];
+  if (!value) {
+    throw new Error(`Configuration key ${key} is missing`);
+  }
+  return value;
+};
+
+const hashPassword = async (password: string): Promise<string> => {
+  const saltRounds = parseInt(getConfigValue('bcrypt_salt_round', '10'), 10);
+  return bcrypt.hash(password, saltRounds);
+};
+
+type JwtTokens = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+const createJwtTokens = (userId: string, role: string): JwtTokens => {
+  const jwtPayload = { userId, role };
+  const accessToken = createToken(
+    jwtPayload,
+    getConfigValue('jwt_access_secret', ''),
+    getConfigValue('jwt_access_expires_in', ''),
+  );
+  const refreshToken = createToken(
+    jwtPayload,
+    getConfigValue('jwt_refresh_secret', ''),
+    getConfigValue('jwt_refresh_expires_in', ''),
+  );
+  return { accessToken, refreshToken };
+};
+
+interface RegisterUserResponse {
+  _id: string;
   name: string;
   email: string;
-};
-const register = async (payload: IUser): Promise<UserPayload> => {
+  accessToken: string;
+  refreshToken: string;
+}
+
+const register = async (payload: IUser) => {
   const result = await User.create(payload);
 
   return result;
 };
+
+interface LoginUserResponse {
+  accessToken: string;
+  refreshToken: string;
+  needsPasswordChange: boolean;
+}
+
 const login = async (payload: { email: string; password: string }) => {
   const user = await User.findOne({ email: payload?.email }).select(
     '+password',
@@ -29,6 +73,16 @@ const login = async (payload: { email: string; password: string }) => {
   if (!user) {
     throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
   }
+
+  const isPasswordMatched = await bcrypt.compare(
+    payload?.password,
+    user?.password,
+  );
+
+  if (!isPasswordMatched) {
+    throw new AppError(StatusCodes.FORBIDDEN, 'Wrong Password !!');
+  }
+
   const userStatus = user?.isBlocked;
 
   if (userStatus) {
@@ -56,77 +110,49 @@ const login = async (payload: { email: string; password: string }) => {
 
   return { accessToken, refreshToken, user };
 };
-
-const refreshToken = async (token: string, res: Response) => {
-  let decoded;
+const refreshToken = async (token: string) => {
   try {
-    decoded = jwt.verify(
+    const decoded = jwt.verify(
       token,
-      config.jwt_refresh_secret as string,
+      getConfigValue('jwt_refresh_secret', ''),
     ) as JwtPayload;
-  } catch (error) {
-    res.clearCookie('refreshToken');
-    throw new AppError(StatusCodes.UNAUTHORIZED, 'Expired refresh token');
+
+    const user = await User.findById(decoded.userId);
+
+    if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    const newAccessToken = createToken(
+      { userId: user.id, role: user.role },
+      getConfigValue('jwt_access_secret', ''),
+      getConfigValue('jwt_access_expires_in', ''),
+    );
+
+    return { accessToken: newAccessToken };
+  } catch (error: any) {
+    if (error instanceof jwt.TokenExpiredError) {
+      throw new AppError(httpStatus.UNAUTHORIZED, 'Refresh token expired');
+    }
+    throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid refresh token');
   }
+};
 
-  const { userId } = decoded;
-  const user = await User.findById(userId).select('+password');
-  if (!user) {
-    throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
-  }
-
-  // checking if the user is inactive
-  const userStatus = user?.isBlocked;
-
-  if (userStatus) {
-    throw new AppError(StatusCodes.FORBIDDEN, 'This user is blocked ! !');
-  }
-
-  // Create token and send to the client side
-  const jwtPayload = {
-    name: user?.name,
-    email: user?.email,
-    role: user?.role,
-    userId: user?._id,
-  };
-
-  const accessToken = createToken(
+const accessToken = async (user: any) => {
+  // Implement the logic to generate or retrieve an access token for the user
+  // This is a placeholder implementation
+  const jwtPayload = { userId: user.id, role: user.role };
+  const newAccessToken = createToken(
     jwtPayload,
-    config.jwt_access_secret as string,
-    config.jwt_access_expires_in as string,
+    getConfigValue('jwt_access_secret', ''),
+    getConfigValue('jwt_access_expires_in', ''),
   );
-  return accessToken;
+  return { accessToken: newAccessToken };
 };
 
-const profileUpdate = async (
-  userId: string,
-  payload: Record<string, unknown>,
-) => {
-  const result = await User.findByIdAndUpdate(userId, payload, { new: true });
-  return result;
-};
-const authMe = async (userId: string) => {
-  const user = await User.findById(userId).select('-password');
-  return user;
-};
-
-export const authService = {
+export const AuthServices = {
   register,
   login,
   refreshToken,
-
-  profileUpdate,
-  authMe,
+  accessToken,
 };
-function createToken(
-  jwtPayload: {
-    name: string;
-    email: string;
-    role: 'customer' | 'admin' | undefined;
-    userId: Types.ObjectId;
-  },
-  arg1: string,
-  arg2: string,
-) {
-  throw new Error('Function not implemented.');
-}
