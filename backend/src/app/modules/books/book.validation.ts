@@ -26,7 +26,7 @@ const bookValidationSchema = z.object({
     model: z.string().trim(),
     description: z.string(),
     quantity: z.number().int().min(0),
-    // inStock: z.boolean()
+    inStock: z.boolean(),
   }),
 });
 

@@ -51,6 +51,10 @@ const deleteBook = async (id: string) => {
   const result = await Book.findByIdAndDelete(id);
   return result;
 };
+const getRecentBooks = async () => {
+  const result = await Book.find().sort({ createdAt: -1 }).limit(4);
+  return result;
+};
 
 export const bookService = {
   createBook,
@@ -58,4 +62,5 @@ export const bookService = {
   getSpecificBook,
   updateBook,
   deleteBook,
+  getRecentBooks,
 };

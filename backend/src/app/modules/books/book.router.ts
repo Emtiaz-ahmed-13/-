@@ -26,6 +26,8 @@ bookRoutes.delete(
   auth(USER_ROLE.admin),
   bookController.deleteBook,
 );
+
 bookRoutes.get('/', bookController.getBooks);
+bookRoutes.get('/recent', bookController.getRecentBooks);
 
 export default bookRoutes;

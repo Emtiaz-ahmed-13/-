@@ -58,6 +58,15 @@ const deleteBook = catchAsync(async (req, res) => {
     data: null,
   });
 });
+const getRecentBooks = catchAsync(async (req, res) => {
+  const result = await bookService.getRecentBooks();
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: 'Recent books retrieved successfully',
+    statusCode: StatusCodes.OK,
+    data: result,
+  });
+});
 
 export const bookController = {
   createBook,
@@ -65,4 +74,5 @@ export const bookController = {
   getSpecificBook,
   updateBook,
   deleteBook,
+  getRecentBooks,
 };

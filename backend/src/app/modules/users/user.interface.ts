@@ -1,3 +1,5 @@
+import { Types } from 'mongoose';
+
 //create a interface for user
 export interface IUser {
   profileImage: string;
@@ -8,4 +10,5 @@ export interface IUser {
   isBlocked?: boolean;
   address: string;
   phone: string;
+  favoriteBooks?: Types.ObjectId[];
 }
