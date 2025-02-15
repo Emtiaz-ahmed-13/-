@@ -1,69 +1,43 @@
-import bcrypt from 'bcrypt';
-import httpStatus from 'http-status';
-import jwt, { JwtPayload } from 'jsonwebtoken';
-
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-unused-vars */
+import { Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import jwt, { JwtPayload } from 'jsonwebtoken';
+import { Types } from 'mongoose';
 import config from '../../config';
 import AppError from '../../errors/AppError';
-import { IUser } from '../users/user.interface';
 import User from '../users/user.model';
 import { createToken } from './auth.utils';
 
-const getConfigValue = (
-  key: keyof typeof config,
-  defaultValue: string,
-): string => {
-  const value = config[key];
-  if (!value) {
-    throw new Error(`Configuration key ${key} is missing`);
-  }
-  return value;
-};
-
-const hashPassword = async (password: string): Promise<string> => {
-  const saltRounds = parseInt(getConfigValue('bcrypt_salt_round', '10'), 10);
-  return bcrypt.hash(password, saltRounds);
-};
-
-type JwtTokens = {
-  accessToken: string;
-  refreshToken: string;
-};
-
-const createJwtTokens = (userId: string, role: string): JwtTokens => {
-  const jwtPayload = { userId, role };
-  const accessToken = createToken(
-    jwtPayload,
-    getConfigValue('jwt_access_secret', ''),
-    getConfigValue('jwt_access_expires_in', ''),
-  );
-  const refreshToken = createToken(
-    jwtPayload,
-    getConfigValue('jwt_refresh_secret', ''),
-    getConfigValue('jwt_refresh_expires_in', ''),
-  );
-  return { accessToken, refreshToken };
-};
-
-interface RegisterUserResponse {
-  _id: string;
+type UserPayload = {
+  _id: Types.ObjectId;
   name: string;
   email: string;
-  accessToken: string;
-  refreshToken: string;
-}
-
-const register = async (payload: IUser) => {
-  const result = await User.create(payload);
-
-  return result;
 };
 
-interface LoginUserResponse {
-  accessToken: string;
-  refreshToken: string;
-  needsPasswordChange: boolean;
-}
+const register = async (payload: UserPayload) => {
+  const user = await User.create(payload);
+  const jwtPayload = {
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    userId: user._id,
+  };
+
+  const accessToken = createToken(
+    jwtPayload,
+    config.jwt_access_secret as string,
+    config.jwt_access_expires_in as string,
+  );
+
+  const refreshToken = createToken(
+    jwtPayload,
+    config.jwt_refresh_secret as string,
+    config.jwt_refresh_expires_in as string,
+  );
+
+  return { accessToken, refreshToken, user };
+};
 
 const login = async (payload: { email: string; password: string }) => {
   const user = await User.findOne({ email: payload?.email }).select(
@@ -74,21 +48,11 @@ const login = async (payload: { email: string; password: string }) => {
     throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
   }
 
-  const isPasswordMatched = await bcrypt.compare(
-    payload?.password,
-    user?.password,
-  );
-
-  if (!isPasswordMatched) {
-    throw new AppError(StatusCodes.FORBIDDEN, 'Wrong Password !!');
-  }
-
   const userStatus = user?.isBlocked;
 
   if (userStatus) {
     throw new AppError(StatusCodes.FORBIDDEN, 'This user is blocked ! !');
   }
-
   const jwtPayload = {
     name: user?.name,
     email: user?.email,
@@ -110,49 +74,70 @@ const login = async (payload: { email: string; password: string }) => {
 
   return { accessToken, refreshToken, user };
 };
-const refreshToken = async (token: string) => {
+
+const refreshToken = async (token: string, res: Response) => {
+  let decoded: JwtPayload;
+
   try {
-    const decoded = jwt.verify(
+    decoded = jwt.verify(
       token,
-      getConfigValue('jwt_refresh_secret', ''),
+      config.jwt_refresh_secret as string,
     ) as JwtPayload;
-
-    const user = await User.findById(decoded.userId);
-
-    if (!user) {
-      throw new AppError(httpStatus.NOT_FOUND, 'User not found');
-    }
-
-    const newAccessToken = createToken(
-      { userId: user.id, role: user.role },
-      getConfigValue('jwt_access_secret', ''),
-      getConfigValue('jwt_access_expires_in', ''),
-    );
-
-    return { accessToken: newAccessToken };
-  } catch (error: any) {
-    if (error instanceof jwt.TokenExpiredError) {
-      throw new AppError(httpStatus.UNAUTHORIZED, 'Refresh token expired');
-    }
-    throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid refresh token');
+  } catch (error) {
+    res.clearCookie('refreshToken'); // Ensure cookie is cleared on failure
+    throw new AppError(StatusCodes.UNAUTHORIZED, 'Expired refresh token');
   }
-};
 
-const accessToken = async (user: any) => {
-  // Implement the logic to generate or retrieve an access token for the user
-  // This is a placeholder implementation
-  const jwtPayload = { userId: user.id, role: user.role };
+  const { userId } = decoded;
+  const user = await User.findById(userId).select('+password');
+
+  if (!user) {
+    res.clearCookie('refreshToken'); // Clear cookie if user doesn't exist
+    throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
+  }
+
+  if (user.isBlocked) {
+    res.clearCookie('refreshToken'); // Clear cookie if user is blocked
+    throw new AppError(StatusCodes.FORBIDDEN, 'This user is blocked ! !');
+  }
+
+  const jwtPayload = {
+    email: user.email,
+    role: user.role,
+    userId: user._id,
+  };
+
+  // Generate new tokens
   const newAccessToken = createToken(
     jwtPayload,
-    getConfigValue('jwt_access_secret', ''),
-    getConfigValue('jwt_access_expires_in', ''),
+    config.jwt_access_secret as string,
+    config.jwt_access_expires_in as string,
   );
-  return { accessToken: newAccessToken };
+
+  const newRefreshToken = createToken(
+    jwtPayload,
+    config.jwt_refresh_secret as string,
+    config.jwt_refresh_expires_in as string,
+  );
+
+  // Set new refresh token in cookie (optional)
+  res.cookie('refreshToken', newRefreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
+
+  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
 };
 
-export const AuthServices = {
+const authMe = async (userId: string) => {
+  const user = await User.findById(userId).select('-password');
+  return user;
+};
+
+export const authService = {
   register,
   login,
   refreshToken,
-  accessToken,
+  authMe,
 };

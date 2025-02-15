@@ -1,4 +1,5 @@
-import jwt, { SignOptions } from 'jsonwebtoken';
+import jwt, { type SignOptions } from 'jsonwebtoken';
+
 export const createToken = (
   jwtPayload: Record<string, unknown>,
   secret: string,

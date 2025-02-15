@@ -1,8 +1,10 @@
 export const USER_ROLE = {
-  // user: 'user',
   admin: 'admin',
   user: 'user',
 } as const;
+
+export type TUserRole = keyof typeof USER_ROLE;
+
 export type TTokenResponse = {
   name: string;
   email: string;

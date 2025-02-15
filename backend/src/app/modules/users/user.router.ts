@@ -4,6 +4,7 @@ import { userController } from './user.controller';
 import { userValidation } from './user.validation';
 
 const userRouter = Router();
+
 userRouter.post(
   '/register',
   validateRequest(userValidation.userValidationSchema),

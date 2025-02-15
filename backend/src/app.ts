@@ -6,21 +6,29 @@ import { globalErrorHandler } from './app/middlewares/globalErrorHandler';
 import router from './app/routes';
 
 const app: Application = express();
+
+// Middlewares
 app.use(cookieParser());
 app.use(express.json());
 app.use(
   cors({
-    origin: ['http://localhost:5173'],
+    origin: ['http://localhost:5173'], // Adjust the origin as necessary
     credentials: true,
   }),
 );
-app.use('/api', router);
 
+// Routes
+app.use('/api', router); // All API routes will start with /api
+
+// Default Route
 app.get('/', (req, res) => {
-  res.json({ message: 'welcome to my backend project' });
+  res.json({ message: 'Welcome to my backend project' });
 });
+
+// Global Error Handler
 app.use(globalErrorHandler);
 
+// Catch-all Route for Undefined Routes
 app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
     status: false,
@@ -28,4 +36,5 @@ app.use('*', (req: Request, res: Response) => {
     message: 'Route not found',
   });
 });
+
 export default app;
