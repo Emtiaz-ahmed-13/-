@@ -1,9 +1,9 @@
 export interface IBook {
-  image: string;
-  name: string;
+  title: string;
+  author: string;
   price: number;
   category: 'FICTION' | 'NON-FICTION' | 'SCIENCE' | 'TECHNOLOGY';
-  model: string;
+  image: string;
   description: string;
   quantity: number;
   inStock: boolean;

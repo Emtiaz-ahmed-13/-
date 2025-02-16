@@ -7,10 +7,6 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: true,
     },
-    profileImage: {
-      type: String,
-      default: null,
-    },
     email: {
       type: String,
       required: true,
@@ -24,19 +20,6 @@ const userSchema = new Schema<IUser>(
     role: {
       type: String,
       enum: ['user', 'admin'],
-      default: 'user',
-    },
-    isBlocked: {
-      type: Boolean,
-      default: false,
-    },
-    address: {
-      type: String,
-      default: null,
-    },
-    phone: {
-      type: String,
-      default: null,
     },
   },
   {

@@ -7,10 +7,14 @@ type UserPayload = {
   name: string;
   email: string;
 };
+
 const createUser = async (payload: IUser): Promise<UserPayload> => {
   const result = await User.create(payload);
-
-  return result;
+  return {
+    _id: result._id as Types.ObjectId,
+    name: result.name,
+    email: result.email,
+  };
 };
 
 export const userService = {

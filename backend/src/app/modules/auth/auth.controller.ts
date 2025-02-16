@@ -30,6 +30,7 @@ const login = catchAsync(async (req: Request, res: Response) => {
 });
 
 const register = catchAsync(async (req: Request, res: Response) => {
+  console.log('RECIEVED REGISTER REQUEST', req.body);
   const { accessToken, refreshToken, user } = await authService.register(
     req.body,
   );
@@ -45,13 +46,7 @@ const register = catchAsync(async (req: Request, res: Response) => {
     success: true,
     message: 'User created successfully',
     statusCode: StatusCodes.CREATED,
-    data: {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      accessToken,
-      refreshToken,
-    },
+    data: { accessToken, user },
   });
 });
 

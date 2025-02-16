@@ -4,7 +4,8 @@ import { bookService } from './book.service';
 
 // create a controller for create book
 const createBook = catchAsync(async (req, res) => {
-  await bookService.createBook(req.body); // Changed bikeService to bookService
+  console.log(req.body);
+  await bookService.createBook(req.body);
   res.status(StatusCodes.OK).json({
     success: true,
     message: 'Book created successfully',

@@ -1,14 +1,22 @@
-import { Types } from 'mongoose';
+import { Document, Model } from 'mongoose';
 
-//create a interface for user
-export interface IUser {
-  profileImage: string;
+export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
-  role?: 'customer' | 'admin';
-  isBlocked?: boolean;
-  address: string;
-  phone: string;
-  favoriteBooks?: Types.ObjectId[];
+  role: 'user' | 'admin';
+  phone?: string;
+  address?: string;
+  city?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
+
+export interface IUserMethods {
+  comparePassword(candidatePassword: string): Promise<boolean>;
+  generateToken(): string;
+}
+
+type TUserModel = Model<IUser, {}, IUserMethods>;
+
+export default TUserModel;

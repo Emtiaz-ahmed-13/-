@@ -12,15 +12,14 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
   cors({
-    origin: ['http://localhost:5173'], // Adjust the origin as necessary
+    origin: ['http://localhost:5173'],
     credentials: true,
   }),
 );
 
 // Routes
-app.use('/api', router); // All API routes will start with /api
+app.use('/api', router);
 
-// Default Route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to my backend project' });
 });

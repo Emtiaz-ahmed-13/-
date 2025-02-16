@@ -7,7 +7,11 @@ let server: Server;
 
 async function main() {
   try {
+    // Debugging step to log the database URI
+    console.log('Connecting to MongoDB with URI');
+
     await mongoose.connect(config.database_uri as string);
+
     server = app.listen(config.port, () => {
       console.log(`App is listening on port ${config.port}`);
     });

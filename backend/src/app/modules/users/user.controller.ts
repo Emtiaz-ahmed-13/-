@@ -13,6 +13,7 @@ const createUser = catchAsync(async (req, res) => {
     data: { _id, name, email },
   });
 });
+
 export const userController = {
   createUser,
 };

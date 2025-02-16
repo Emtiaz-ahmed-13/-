@@ -1,58 +1,52 @@
-// import { StatusCodes } from 'http-status-codes';
-// import catchAsync from '../../utils/catchAsync';
-// import { TTokenResponse } from '../auth/auth.interface';
+import httpStatus from 'http-status';
+import catchAsync from '../../utils/catchAsync';
+import sendResponse from '../../utils/sendRespone';
+import { IUser } from '../users/user.interface';
+import { orderService } from './order.service';
 
-// // create a controller for create o order
-// const createOrder = catchAsync(async (req, res) => {
-//   const user = req?.user as TTokenResponse;
-//   const payload = req.body;
-//   const result = await orderService.createOrder(user, payload, req.ip!);
+const createOrder = catchAsync(async (req, res) => {
+  const user = req.user as IUser;
 
-//   res.status(StatusCodes.OK).json({
-//     success: true,
-//     message: 'Order create successfully',
-//     statusCode: StatusCodes.OK,
-//     data: result,
-//   });
-// });
-// // get order
-// const getOrders = catchAsync(async (req, res) => {
-//   const user = req?.user as TTokenResponse;
-//   const queryData = req?.query;
-//   const result = await orderService.getOrders(user, queryData);
-//   res.status(StatusCodes.OK).json({
-//     success: true,
-//     message: 'Order get successfully',
-//     statusCode: StatusCodes.OK,
-//     data: result.result,
-//     meta: result.meta,
-//   });
-// });
+  if (!user) {
+    return sendResponse(res, {
+      statusCode: httpStatus.UNAUTHORIZED,
+      message: 'User not authenticated',
+      data: null,
+      success: false,
+    });
+  }
 
-// const verifyPayment = catchAsync(async (req, res) => {
-//   const order_id = req?.body.order_id as string;
-//   const result = await orderService.verifyPayment(order_id as string);
-//   res.status(StatusCodes.OK).json({
-//     success: true,
-//     message: 'verify order successfully',
-//     statusCode: StatusCodes.OK,
-//     data: result,
-//   });
-// });
+  console.log(req.body);
+  const order = await orderService.createOrder(user, req.body, req.ip!);
 
-// const getTotalRevenue = catchAsync(async (req, res) => {
-//   const result = await orderService.getTotalRevenue();
-//   res.status(StatusCodes.OK).json({
-//     success: true,
-//     message: 'verify order successfully',
-//     statusCode: StatusCodes.OK,
-//     data: result,
-//   });
-// });
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    message: 'Order placed successfully',
+    data: order,
+    success: true,
+  });
+});
 
-// export const orderController = {
-//   createOrder,
-//   getTotalRevenue,
-//   getOrders,
-//   verifyPayment,
-// };
+const getOrders = catchAsync(async (req, res) => {
+  const order = await orderService.getOrders();
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    message: 'Order retrieved successfully',
+    data: order,
+    success: false,
+  });
+});
+
+const verifyPayment = catchAsync(async (req, res) => {
+  const order = await orderService.verifyPayment(req.query.order_id as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    message: 'Order verified successfully',
+    data: order,
+    success: false,
+  });
+});
+
+export const orderController = { createOrder, verifyPayment, getOrders };

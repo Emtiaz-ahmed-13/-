@@ -48,11 +48,6 @@ const login = async (payload: { email: string; password: string }) => {
     throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
   }
 
-  const userStatus = user?.isBlocked;
-
-  if (userStatus) {
-    throw new AppError(StatusCodes.FORBIDDEN, 'This user is blocked ! !');
-  }
   const jwtPayload = {
     name: user?.name,
     email: user?.email,
@@ -94,11 +89,6 @@ const refreshToken = async (token: string, res: Response) => {
   if (!user) {
     res.clearCookie('refreshToken'); // Clear cookie if user doesn't exist
     throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
-  }
-
-  if (user.isBlocked) {
-    res.clearCookie('refreshToken'); // Clear cookie if user is blocked
-    throw new AppError(StatusCodes.FORBIDDEN, 'This user is blocked ! !');
   }
 
   const jwtPayload = {

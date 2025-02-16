@@ -2,18 +2,6 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../utils/catchAsync';
 import { adminService } from './admin.service';
 
-const blockUser = catchAsync(async (req, res) => {
-  const userId = req.params.userId;
-  const body = req.body;
-
-  const result = await adminService.blockUser(userId, body);
-  res.status(StatusCodes.OK).json({
-    success: true,
-    message: 'User blocked successfully',
-    statusCode: StatusCodes.OK,
-    data: result,
-  });
-});
 const getUsers = catchAsync(async (req, res) => {
   const queryData = req?.query;
 
@@ -28,6 +16,5 @@ const getUsers = catchAsync(async (req, res) => {
 });
 
 export const adminController = {
-  blockUser,
   getUsers,
 };
