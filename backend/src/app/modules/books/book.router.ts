@@ -6,24 +6,27 @@ import { bookController } from './book.controller';
 import { bookValidation } from './book.validation';
 const bookRoutes = express.Router();
 
+const debugMiddleware = (req: any, res: any, next: any) => {
+  console.log('Debug - Headers:', req.headers);
+  console.log('Debug - Body:', req.body);
+  next();
+};
 bookRoutes.post(
   '/',
+  debugMiddleware,
   auth(USER_ROLE.admin),
+  debugMiddleware,
   validateRequest(bookValidation.bookValidationSchema),
   bookController.createBook,
 );
-bookRoutes.get('/:productId', bookController.getSpecificBook);
+bookRoutes.get('/:bookId', bookController.getSpecificBook);
 bookRoutes.put(
-  '/:productId',
+  '/:booktId',
   auth(USER_ROLE.admin, USER_ROLE.user),
   validateRequest(bookValidation.updateBookValidationSchema),
   bookController.updateBook,
 );
-bookRoutes.delete(
-  '/:productId',
-  auth(USER_ROLE.admin),
-  bookController.deleteBook,
-);
+bookRoutes.delete('/:bookId', auth(USER_ROLE.admin), bookController.deleteBook);
 
 bookRoutes.get('/', bookController.getBooks);
 bookRoutes.get('/recent', bookController.getRecentBooks);

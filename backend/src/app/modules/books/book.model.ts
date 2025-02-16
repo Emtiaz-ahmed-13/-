@@ -3,38 +3,31 @@ import { IBook } from './book.interface';
 
 const bookSchema = new Schema<IBook>(
   {
-    title: { type: String, trim: true, required: [true, 'Title is Required'] },
-    author: {
-      type: String,
-      trim: true,
-      required: [true, 'Author is Required'],
-    },
-    price: {
+    শিরোনাম: { type: String, required: [true, 'শিরোনাম আবশ্যক'] },
+    লেখক: { type: String, required: [true, 'লেখকের নাম আবশ্যক'] },
+    মূল্য: {
       type: Number,
-      min: [0, 'Price can not be less than 0'],
-      required: [true, 'Book price is Required'],
+      min: [0, 'মূল্য 0 এর কম হতে পারে না'],
+      required: [true, 'বইয়ের মূল্য আবশ্যক'],
     },
-    category: {
+    ক্যাটাগরি: {
       type: String,
       enum: {
-        values: ['FICTION', 'NON-FICTION', 'SCIENCE', 'TECHNOLOGY'],
-        message: '{VALUE} is not a valid category',
+        values: ['উপন্যাস', 'বিজ্ঞান', 'প্রযুক্তি', 'অন্য', 'কবিতা'],
+        message: '{VALUE} একটি বৈধ ক্যাটাগরি নয়',
       },
-      required: [true, 'Category is Required'],
+      required: [true, 'ক্যাটাগরি আবশ্যক'],
     },
-    description: {
-      type: String,
-      trim: true,
-      required: [true, 'Book description is Required'],
-    },
-    quantity: {
+    প্রকাশনী: { type: String, required: [true, 'প্রকাশনী আবশ্যক'] },
+    বিবরণ: { type: String, required: [true, 'বিবরণ আবশ্যক'] },
+    পরিমাণ: {
       type: Number,
-      min: [0, 'Quantity can not be less than 0'],
-      required: [true, 'Quantity is Required'],
+      min: [0, 'পরিমাণ 0 এর কম হতে পারে না'],
+      required: [true, 'পরিমাণ আবশ্যক'],
     },
-    inStock: {
+    স্টকে_আছে: {
       type: Boolean,
-      required: [true, 'InStock value will be true or false'],
+      required: [true, 'স্টকে আছে মানটি true বা false হতে হবে'],
       default: true,
     },
   },

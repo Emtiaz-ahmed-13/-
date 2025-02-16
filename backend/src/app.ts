@@ -1,13 +1,16 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express, { Application, Request, Response } from 'express';
+import express, {
+  type Application,
+  type Request,
+  type Response,
+} from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { globalErrorHandler } from './app/middlewares/globalErrorHandler';
 import router from './app/routes';
 
 const app: Application = express();
 
-// Middlewares
 app.use(cookieParser());
 app.use(express.json());
 app.use(
@@ -17,11 +20,18 @@ app.use(
   }),
 );
 
+// Logging middleware
+app.use((req, res, next) => {
+  console.log(`Incoming Request: ${req.method} ${req.url}`);
+  console.log('Request Body:', req.body);
+  next();
+});
+
 // Routes
 app.use('/api', router);
 
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to my backend project' });
+  res.json({ message: 'Welcome to my বইপোকা বুক স্টোর  project' });
 });
 
 // Global Error Handler
@@ -31,7 +41,7 @@ app.use(globalErrorHandler);
 app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
     status: false,
-    StatusCode: StatusCodes.NOT_FOUND,
+    statusCode: StatusCodes.NOT_FOUND,
     message: 'Route not found',
   });
 });

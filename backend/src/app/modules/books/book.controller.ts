@@ -27,20 +27,20 @@ const getBooks = catchAsync(async (req, res) => {
 });
 
 const getSpecificBook = catchAsync(async (req, res) => {
-  const productId = req.params.productId;
-  const result = await bookService.getSpecificBook(productId);
+  const bookId = req.params.bookId;
+  const result = await bookService.getSpecificBook(bookId);
   res.status(StatusCodes.OK).json({
     success: true,
-    message: 'Book retrieved successfully',
+    message: 'A single BOOK retrieved successfully',
     statusCode: StatusCodes.OK,
     data: result,
   });
 });
 
 const updateBook = catchAsync(async (req, res) => {
-  const productId = req?.params?.productId;
+  const bookId = req?.params?.productId;
   const body = req.body;
-  const result = await bookService.updateBook(productId, body);
+  const result = await bookService.updateBook(bookId, body);
   res.status(StatusCodes.OK).json({
     success: true,
     message: 'Book updated successfully',
@@ -49,8 +49,8 @@ const updateBook = catchAsync(async (req, res) => {
   });
 });
 const deleteBook = catchAsync(async (req, res) => {
-  const productId = req.params.productId;
-  await bookService.deleteBook(productId);
+  const bookId = req.params.bookId;
+  await bookService.deleteBook(bookId);
 
   res.status(StatusCodes.OK).json({
     success: true,
